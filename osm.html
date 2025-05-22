@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>OSM Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+  <style>
+    html, body, #map {
+      height: 100%;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    let map = null;
+    let userMarker = null;
+    let destinationMarker = null;
+    let routeLine = null;
+
+    // Function to initialize map with user location
+    function initializeMap(latitude, longitude) {
+      if (!map) {
+        map = L.map('map').setView([latitude, longitude], 15); // Increased zoom level
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        // Create custom icons
+        const userIcon = L.divIcon({
+          className: 'user-marker',
+          html: '<div style="background-color: #447bd5; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div>',
+          iconSize: [16, 16]
+        });
+
+        const destinationIcon = L.divIcon({
+          className: 'destination-marker',
+          html: '<div style="background-color: #b42121; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div>',
+          iconSize: [16, 16]
+        });
+
+        // Initialize only user marker initially
+        userMarker = L.marker([latitude, longitude], { icon: userIcon })
+          .addTo(map)
+          .bindPopup("You")
+          .openPopup();
+
+        // Center map on user location
+        map.setView([latitude, longitude], 15);
+      }
+    }
+
+    // Function to update destination marker
+    function updateDestinationMarker(latitude, longitude) {
+      if (!map) return;
+
+      const destinationIcon = L.divIcon({
+        className: 'destination-marker',
+        html: '<div style="background-color: #b42121; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div>',
+        iconSize: [16, 16]
+      });
+
+      // Remove existing destination marker if any
+      if (destinationMarker) {
+        map.removeLayer(destinationMarker);
+      }
+
+      // Add new destination marker
+      destinationMarker = L.marker([latitude, longitude], { icon: destinationIcon })
+        .addTo(map)
+        .bindPopup("Destination")
+        .openPopup();
+    }
+
+    // Handle messages from React Native
+    document.addEventListener("message", function (event) {
+      try {
+        const data = JSON.parse(event.data);
+        const { latitude, longitude, routeCoords, isInitialLocation } = data;
+
+        if (isInitialLocation) {
+          initializeMap(latitude, longitude);
+        } else {
+          // Update user marker position
+          userMarker?.setLatLng([latitude, longitude]);
+
+          // Update route and destination
+          if (routeCoords && routeCoords.length > 1) {
+            // Update destination marker using the last coordinate of the route
+            const lastCoord = routeCoords[routeCoords.length - 1];
+            updateDestinationMarker(lastCoord[1], lastCoord[0]);
+
+            // Update route line
+            if (routeLine) {
+              map.removeLayer(routeLine);
+            }
+
+            routeLine = L.polyline(routeCoords.map(coord => [coord[1], coord[0]]), {
+              color: '#631235',
+              weight: 5,
+              opacity: 0.8
+            }).addTo(map);
+
+            // Fit map to show both markers and route
+            const bounds = routeLine.getBounds().extend(destinationMarker.getLatLng());
+            map.fitBounds(bounds, { padding: [50, 50] });
+          }
+        }
+      } catch (e) {
+        console.error('Error parsing message:', e);
+      }
+    });
+  </script>
+</body>
+</html>
