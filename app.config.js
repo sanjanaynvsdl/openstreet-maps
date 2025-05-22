@@ -21,7 +21,13 @@ export default ({ config }) => ({
       },
       edgeToEdgeEnabled: true,
       package: "com.sanjana1209.riderosm",
-      permissions: ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION", "ACCESS_BACKGROUND_LOCATION"]
+      permissions: [
+        "ACCESS_FINE_LOCATION", 
+        "ACCESS_COARSE_LOCATION", 
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION"
+      ],
     },
     web: {
       bundler: "metro",
@@ -42,7 +48,10 @@ export default ({ config }) => ({
       [
         "expo-location",
         {
-          locationAlwaysAndWhenInUsePermission: "Allow Rider  to use your location for navigation and tracking."
+          locationAlwaysAndWhenInUsePermission: "Allow Rider  to use your location for navigation and tracking.",
+          locationAlwaysPermission: "Allow Rider to use your location in the background.",
+          isIosBackgroundLocationEnabled: true,
+          isAndroidBackgroundLocationEnabled: true
         }
       ],
     ],
@@ -53,9 +62,9 @@ export default ({ config }) => ({
       MAPBOX_API_KEY: process.env.MAPBOX_API_KEY,
       router: {},
       eas: {
-        projectId: "a2d40741-e19e-4fb7-9376-37ed9ee3efb7",
-      },
+        projectId: "30dca22c-54e7-47ba-bd41-f778700c96f1"
+      }
     },
-    owner: "sanjana_ynvsdl",
+    
   });
   

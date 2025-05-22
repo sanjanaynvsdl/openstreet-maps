@@ -6,8 +6,8 @@ export default function Index() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Rider OSM</Text>
-      <Text style={styles.subtitle}>Track your location with OpenStreetMap</Text>
+      {/* <Text style={styles.title}>Rider OSM</Text> */}
+      <Text style={styles.subtitle}>Track location with OpenStreetMap</Text>
       
       <TouchableOpacity 
         style={styles.button}

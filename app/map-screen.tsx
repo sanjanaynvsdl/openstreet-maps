@@ -62,14 +62,18 @@ export default function MapScreen() {
         return;
       }
 
-      try {
-        const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
-        if (backgroundStatus !== 'granted') {
-          console.log('Background location permission denied');
-        }
-      } catch (error) {
-        console.log('Error requesting background permission:', error);
-      }
+       // Request background permission explicitly
+  try {
+    const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
+    if (backgroundStatus !== 'granted') {
+      console.log('Background location permission denied');
+      // You might want to show a message to the user here
+    } else {
+      console.log('Background location permission granted');
+    }
+  } catch (error) {
+    console.log('Error requesting background permission:', error);
+  }
 
       // Get initial location
       const location = await Location.getCurrentPositionAsync({});
