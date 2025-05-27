@@ -73,7 +73,7 @@ export const fetchRoute = async (start: [number, number], end: [number, number])
     console.error('Error fetching route details:', err);
     // Provide fallback/default response
     return {
-      coordinates: [[end[0], end[1]], [start[0], start[1]]], // Simple straight line
+      coordinates: [[end[0], end[1]], [start[0], start[1]]], 
       distance: 0,
       duration: 0
     };
@@ -84,7 +84,7 @@ let socket: Socket | null = null;
 
 export const initializeWebSocket = () => {
   if (!socket) {
-    socket = io('http://192.168.1.7:3000');
+    socket = io('https://ws-maps.onrender.com');
     
     socket.on('connect', () => {
       console.log('WebSocket connected');

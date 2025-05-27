@@ -28,6 +28,10 @@ export default ({ config }) => ({
         "FOREGROUND_SERVICE",
         "FOREGROUND_SERVICE_LOCATION"
       ],
+      config: {
+    usesCleartextTraffic: true,
+    networkSecurityConfig: './network_security_config.xml'
+  },
     },
     web: {
       bundler: "metro",
@@ -62,9 +66,9 @@ export default ({ config }) => ({
       MAPBOX_API_KEY: process.env.MAPBOX_API_KEY,
       router: {},
       eas: {
-        projectId: "30dca22c-54e7-47ba-bd41-f778700c96f1"
+        projectId: "f591479d-b237-49ae-9c65-c9ba32756444"
       }
+      
     },
-    
   });
   

@@ -12,34 +12,116 @@
       height: 100%;
       margin: 0;
     }
+    #error-message {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      background-color: rgba(255, 0, 0, 0.7);
+      color: white;
+      padding: 10px;
+      z-index: 1000;
+      display: none;
+    }
   </style>
 </head>
 <body>
+  <div id="error-message"></div>
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
+    // Initialize error logging
+    console.error = function() {
+      const args = Array.prototype.slice.call(arguments);
+      const errorMsg = args.join(' ');
+      document.getElementById('error-message').textContent = errorMsg;
+      document.getElementById('error-message').style.display = 'block';
+      // Pass to original console.error
+      window.originalConsoleError = window.originalConsoleError || console.error;
+      window.originalConsoleError.apply(console, args);
+    };
+
+    // Check protocol
+    console.log('Page loaded with protocol:', window.location.protocol);
+    
     let map = null;
     let userMarker = null;
     let destinationMarker = null;
     let routeLine = null;
+    
+    // Add error handling
+    function showError(message) {
+      const errorEl = document.getElementById('error-message');
+      errorEl.textContent = message;
+      errorEl.style.display = 'block';
+      console.error(message);
+    }
 
     // Function to initialize map with user location
     function initializeMap(latitude, longitude) {
-      if (!map) {
-        map = L.map('map').setView([latitude, longitude], 15); // Increased zoom level
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          maxZoom: 19,
-          attribution: '© OpenStreetMap'
-        }).addTo(map);
+      try {
+        if (!map) {
+          map = L.map('map').setView([latitude, longitude], 15); // Increased zoom level
+          
+          // Try using HTTPS explicitly with error handling
+          const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap',
+            subdomains: ['a', 'b', 'c'],
+            crossOrigin: true
+          }).addTo(map);
+          
+          tileLayer.on('tileerror', function(e) {
+            console.error('Failed to load tile:', e.tile, 'Error:', e.error);
+            showError('Tile loading error. Try using a different network.');
+            
+            // Try fallback tile server if primary fails
+            if (!map._fallbackTileAttempted) {
+              map._fallbackTileAttempted = true;
+              console.log('Attempting fallback tile server...');
+              
+              // Try Mapbox as fallback (if fails, can try others)
+              L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=pk.eyJ1Ijoic2FuamFuYXludnNkbCIsImEiOiJjbWFnZ2h4YTMwMHVyMmtzN2xoZXg1NmNwIn0.Monymzp3uoEXufc95ywKcA', {
+                maxZoom: 19,
+                attribution: '© Mapbox',
+                crossOrigin: true
+              }).addTo(map);
+            }
+          });
 
-        // Create custom icons
-        const userIcon = L.divIcon({
-          className: 'user-marker',
-          html: '<div style="background-color: #447bd5; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div>',
-          iconSize: [16, 16]
-        });
+          // Create custom icons
+          const userIcon = L.divIcon({
+            className: 'user-marker',
+            html: '<div style="background-color: #447bd5; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div>',
+            iconSize: [16, 16]
+          });
+
+          const destinationIcon = L.divIcon({
+            className: 'destination-marker',
+            html: '<div style="background-color: #b42121; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div>',
+            iconSize: [16, 16]
+          });
+
+          // Initialize only user marker initially
+          userMarker = L.marker([latitude, longitude], { icon: userIcon })
+            .addTo(map)
+            .bindPopup("You")
+            .openPopup();
+
+          // Center map on user location
+          map.setView([latitude, longitude], 15);
+        }
+      } catch (error) {
+        showError('Map initialization error: ' + error.message);
+      }
+    }
+
+    // Function to update destination marker
+    function updateDestinationMarker(latitude, longitude) {
+      try {
+        if (!map) return;
 
         const destinationIcon = L.divIcon({
           className: 'destination-marker',
@@ -47,42 +129,25 @@
           iconSize: [16, 16]
         });
 
-        // Initialize only user marker initially
-        userMarker = L.marker([latitude, longitude], { icon: userIcon })
+        // Remove existing destination marker if any
+        if (destinationMarker) {
+          map.removeLayer(destinationMarker);
+        }
+
+        // Add new destination marker
+        destinationMarker = L.marker([latitude, longitude], { icon: destinationIcon })
           .addTo(map)
-          .bindPopup("You")
+          .bindPopup("Destination")
           .openPopup();
-
-        // Center map on user location
-        map.setView([latitude, longitude], 15);
+      } catch (error) {
+        showError('Destination marker error: ' + error.message);
       }
-    }
-
-    // Function to update destination marker
-    function updateDestinationMarker(latitude, longitude) {
-      if (!map) return;
-
-      const destinationIcon = L.divIcon({
-        className: 'destination-marker',
-        html: '<div style="background-color: #b42121; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div>',
-        iconSize: [16, 16]
-      });
-
-      // Remove existing destination marker if any
-      if (destinationMarker) {
-        map.removeLayer(destinationMarker);
-      }
-
-      // Add new destination marker
-      destinationMarker = L.marker([latitude, longitude], { icon: destinationIcon })
-        .addTo(map)
-        .bindPopup("Destination")
-        .openPopup();
     }
 
     // Handle messages from React Native
     document.addEventListener("message", function (event) {
       try {
+        console.log('Received message:', event.data);
         const data = JSON.parse(event.data);
         const { latitude, longitude, routeCoords, isInitialLocation } = data;
 
@@ -115,9 +180,22 @@
           }
         }
       } catch (e) {
-        console.error('Error parsing message:', e);
+        showError('Error processing message: ' + e.message);
       }
     });
+
+    // Debug initialization - this will run even if no messages are received
+    window.onerror = function(message, source, lineno, colno, error) {
+      showError(`JavaScript error: ${message}`);
+      return true;
+    };
+
+    // Send ready message to React Native
+    try {
+      window.ReactNativeWebView?.postMessage(JSON.stringify({type: 'ready'}));
+    } catch (e) {
+      console.error('Failed to send ready message:', e);
+    }
   </script>
 </body>
 </html>
