@@ -66,8 +66,9 @@ export default ({ config }) => ({
       MAPBOX_API_KEY: process.env.MAPBOX_API_KEY,
       router: {},
       eas: {
-        projectId: "f591479d-b237-49ae-9c65-c9ba32756444"
+        projectId: "331fac7d-d149-4002-80ef-8454d316ee93"
       }
+      
       
     },
   });
